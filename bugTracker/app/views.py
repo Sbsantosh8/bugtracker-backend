@@ -4,6 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from app.serializers import UserSerializer, ProjectSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from app.models import Project
 
 
 class UserView(APIView):
@@ -38,6 +41,8 @@ class UserView(APIView):
 
 
 class ProjectView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
 
@@ -45,9 +50,26 @@ class ProjectView(APIView):
         print("before entering serilizer is valid()")
         if serializer.is_valid():
             print("after valid before save")
-            serializer.save(serializer.save(created_by=request.user))
+            serializer.save(created_by=request.user)
             print("after save of view")
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk=None):
+
+        if pk:
+            try:
+                print(pk)
+                project = Project.objects.get(pk=pk)
+                serializer = ProjectSerializer(project)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Project.DoesNotExist:
+                return Response(
+                    {"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            projects = Project.objects.all()
+            serializer = ProjectSerializer(projects, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
