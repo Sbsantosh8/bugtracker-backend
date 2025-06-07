@@ -6,7 +6,8 @@ from rest_framework import status
 from app.serializers import UserSerializer, ProjectSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from app.models import Project
+from app.models import Project, Ticket
+from .serializers import TicketSerializer
 
 
 class UserView(APIView):
@@ -70,6 +71,23 @@ class ProjectView(APIView):
                     {"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND
                 )
         else:
+            print("entered all")
             projects = Project.objects.all()
             serializer = ProjectSerializer(projects, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TicketView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tickets = Ticket.objects.all()
+        serializer = TicketSerializer(tickets, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = TicketSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

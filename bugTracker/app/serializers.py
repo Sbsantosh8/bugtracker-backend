@@ -36,3 +36,27 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = "__all__"
         read_only_fields = ["created_by"]  # ✅ fix
+
+
+from rest_framework import serializers
+from .models import Ticket, Project
+from django.contrib.auth.models import User
+
+
+class TicketSerializer(serializers.ModelSerializer):
+    project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Ticket
+        fields = [
+            "id",
+            "project",
+            "title",
+            "description",
+            "status",
+            "priority",
+            "created_by",
+            "created_at",
+        ]
+        read_only_fields = ["created_at", "created_by"]
